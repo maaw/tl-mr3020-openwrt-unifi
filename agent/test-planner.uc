@@ -1,0 +1,30 @@
+import { plan } from 'planner';
+let base = 'wireless.1.ssid=IoT\nwireless.1.parent=wifi0\nwireless.1.devname=wifi0ap0\naaa.1.wpa=2\naaa.1.wpa.psk=test-password\naaa.1.wpa.key.1.mgmt=WPA-PSK\n';
+let checks = 0;
+function check(ok) { if (!ok) die('planner assertion failed'); checks++; }
+function rejects(text, vno) { try { plan(text, vno); } catch (e) { return true; } return false; }
+check(plan(base)[0].vlan == null);
+check(plan(base)[0].encryption == 'psk2+ccmp');
+check(plan(base + 'bridge.2.devname=br0.2\nbridge.2.port.1.devname=wifi0ap0\n')[0].vlan == 2);
+check(plan(base + 'wireless.1.status=disabled\n')[0].disabled);
+check(rejects(base + 'aaa.1.wpa3.support=enabled\n'));
+check(plan(base + 'aaa.1.pmf.status=enabled\naaa.1.pmf.mode=1\n')[0].pmf == 1);
+check(rejects(replace(base, 'WPA-PSK', 'WPA-EAP')));
+check(rejects(replace(base, 'wifi0\n', 'wifi1\n')));
+check(rejects(replace(base, 'test-password', 'short')));
+check(rejects(base + 'wireless.1.ssid=duplicate\n'));
+check(rejects(base + 'bridge.2.devname=br0.4095\nbridge.2.port.1.devname=wifi0ap0\n'));
+let client = 'aaa.1.accept_mac.3.mac=02:30:20:00:11:02\naaa.1.accept_mac.3.vlanid=2\n';
+check(length(keys(plan(base + client)[0].client_vlans)) == 0);
+check(plan(base + client, true)[0].client_vlans['02:30:20:00:11:02'] == 2);
+check(length(keys(plan(base, true)[0].client_vlans)) == 0);
+check(rejects(base + replace(client, 'vlanid=2', 'vlanid=4095'), true));
+check(rejects(base + 'aaa.1.accept_mac.3.vlanid=2\n', true));
+check(rejects(base + client + replace(client, 'accept_mac.3.', 'accept_mac.4.'), true));
+let acl = 'macacl.status=enabled\nmacacl.1.status=enabled\nmacacl.1.devname=wifi0ap0\nmacacl.1.acl.status=enabled\nmacacl.1.acl.policy=deny\n';
+acl += 'macacl.1.acl.1.mac=02:30:20:00:11:02\nmacacl.1.acl.2.status=disabled\nmacacl.1.acl.2.mac=02:30:20:00:11:03\n';
+check(length(keys(plan(base + acl)[0].denied_clients)) == 1);
+check(plan(base + acl)[0].denied_clients['02:30:20:00:11:02']);
+check(length(keys(plan(base + replace(acl, 'wifi0ap0', 'other-ap'))[0].denied_clients)) == 0);
+check(rejects(base + replace(acl, '02:30:20:00:11:02', 'not-a-mac')));
+print({ planner_checks_passed: checks, applies_configuration: false });

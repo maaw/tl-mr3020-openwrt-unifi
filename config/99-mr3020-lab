@@ -1,0 +1,23 @@
+#!/bin/sh
+# Hardware-test image only. Do not run synthetic discovery on real hardware.
+uci -q batch <<'EOF'
+set network.lan.proto='dhcp'
+delete network.lan.ipaddr
+delete network.lan.netmask
+delete network.lan.ip6assign
+set network.rescue='interface'
+set network.rescue.device='br-lan'
+set network.rescue.proto='static'
+set network.rescue.ipaddr='169.254.30.20'
+set network.rescue.netmask='255.255.0.0'
+set network.rescue.delegate='0'
+set dropbear.main.PasswordAuth='off'
+set dropbear.main.RootPasswordAuth='off'
+set dropbear.main.LocalPortForward='off'
+set dropbear.main.RemotePortForward='off'
+set system.@system[0].hostname='mr3020-lab'
+commit network
+commit dropbear
+commit system
+EOF
+exit 0

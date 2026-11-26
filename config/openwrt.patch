@@ -1,0 +1,14 @@
+diff --git a/config/Config-build.in b/config/Config-build.in
+index b42fb8b..3b2059f 100644
+--- a/config/Config-build.in
++++ b/config/Config-build.in
+@@ -188,7 +188,8 @@ menu "Global build settings"
+ 		  Packages can opt-out via setting PKG_BUILD_FLAGS:=no-mold
+ 
+ 	config IPV6
+-		def_bool y
++		bool "IPv6 protocol support"
++		default y
+ 
+ 	comment "Stripping options"
+ 

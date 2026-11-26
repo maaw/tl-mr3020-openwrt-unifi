@@ -1,0 +1,1 @@
+-dnsmasq -firewall -ip6tables -iptables -kmod-ipt-offload -odhcp6c -odhcpd-ipv6only -ppp -ppp-mod-pppoe -wpad-mini hostapd-basic -kmod-usb-core -kmod-usb2 -kmod-usb-ledtrig-usbport

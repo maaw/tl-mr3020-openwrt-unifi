@@ -1,0 +1,11 @@
+import * as fs from 'fs';
+import { lock } from 'account';
+let path = test_dir + '/shadow', fixture = 'root:!:0::::::\nubnt:!:0::::::\n';
+fs.writefile(path, fixture); fs.chmod(path, 384);
+lock(path, false, 1000);
+if (index(fs.readfile(path), 'ubnt:$5$') < 0) die('unlock failed');
+lock(path, true, 1000);
+if (fs.readfile(path) != fixture) die('lock changed another account');
+if (fs.lstat(path).mode != 384 || fs.lstat(path + '.mr3020-new')) die('unsafe password-file permissions');
+fs.unlink(path);
+print({ temporary_account_checks_passed: 3 });

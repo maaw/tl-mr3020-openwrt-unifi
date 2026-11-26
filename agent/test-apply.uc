@@ -1,0 +1,42 @@
+import * as fs from 'fs';
+import * as uci from 'uci';
+import { apply, recover } from 'apply';
+import { radio } from 'planner';
+let checks = 0;
+function check(v) { if (!v) die('apply assertion failed'); checks++; }
+let dir = test_dir + '/config', journal = test_dir + '/rollback.json';
+fs.mkdir(dir, 448); fs.mkdir(dir + '/.save', 448);
+let network = "config device 'mgmt'\n option name 'br-lan'\n option type 'bridge'\n list ports 'eth0'\nconfig interface 'lan'\n option proto 'dhcp'\n option device 'br-lan'\nconfig interface 'rescue'\n option proto 'static'\n option device 'br-lan'\n option ipaddr '169.254.30.20'\n option netmask '255.255.0.0'\n";
+let wireless = "config wifi-device 'radio0'\n option type 'mac80211'\n option band '2g'\n option country 'AR'\n option disabled '1'\nconfig wifi-iface 'default_radio0'\n option device 'radio0'\n option mode 'ap'\n option ssid 'OpenWrt'\n option encryption 'none'\n";
+fs.writefile(dir + '/network', network); fs.writefile(dir + '/wireless', wireless);
+let cfg = 'radio.1.phyname=wifi0\nradio.1.channel=6\nradio.1.ieee_mode=11nght20\nwireless.1.ssid=IoT\nwireless.1.parent=wifi0\nwireless.1.devname=ath0\naaa.1.wpa=2\naaa.1.wpa.psk=quoted\'password\naaa.1.wpa.key.1.mgmt=WPA-PSK\naaa.1.pmf.status=enabled\naaa.1.pmf.mode=1\nbridge.2.devname=br0.2\nbridge.2.port.1.devname=ath0\n';
+let result = apply(cfg, dir, journal, () => true, () => true);
+let c = uci.cursor(dir, dir + '/.save');
+check(result.ssids[0].vlan == 2);
+check(c.get('network', 'lan', 'proto') == 'dhcp');
+check(c.get('network', 'rescue', 'ipaddr') == '169.254.30.20');
+check(c.get('network', 'mr3020_tag2', 'ifname') == 'eth0');
+check(c.get('network', 'mr3020_tag2', 'vid') == '2');
+check(c.get('wireless', 'mr3020_ssid0', 'network') == 'mr3020_vlan2');
+check(c.get('wireless', 'mr3020_ssid0', 'key') == "quoted'password");
+check(c.get('wireless', 'mr3020_ssid0', 'ieee80211w') == '1');
+check(c.get('wireless', 'radio0', 'country') == 'AR');
+check(c.get('wireless', 'radio0', 'channel') == '6');
+check(c.get('wireless', 'default_radio0', 'disabled') == '1');
+check(!fs.lstat(journal));
+let saved = { network: fs.readfile(dir + '/network'), wireless: fs.readfile(dir + '/wireless') };
+let rejected = false;
+try { apply(replace(cfg, 'channel=6', 'channel=11'), dir, journal, () => true, () => false); } catch(e) { rejected = true; }
+check(rejected);
+check(fs.readfile(dir + '/network') == saved.network && fs.readfile(dir + '/wireless') == saved.wireless);
+check(!fs.lstat(journal));
+fs.writefile(journal, sprintf('%J', saved)); fs.chmod(journal, 384);
+fs.writefile(dir + '/network', 'corrupt');
+check(recover(dir, journal, () => true));
+check(fs.readfile(dir + '/network') == saved.network);
+check(!recover(dir, journal, () => true));
+check(radio(replace(cfg, '11nght20', '11nght40')).htmode == 'HT40');
+rejected = false;
+try { apply(replace(cfg, 'channel=6', 'channel=165'), dir, journal, () => true, () => true); } catch(e) { rejected = true; }
+check(rejected);
+print({ configuration_checks_passed: checks, hardware_reload_tested: false });

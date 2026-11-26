@@ -1,0 +1,3 @@
+#!/bin/ash
+# Ignore all shell arguments. This account can only receive an adoption key.
+exec /usr/bin/ucode -L /usr/lib/mr3020 /usr/lib/mr3020/adopt-command.uc

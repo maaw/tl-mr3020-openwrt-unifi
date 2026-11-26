@@ -1,0 +1,10 @@
+/private/*
+!/private/.gitkeep
+/work/
+/dist/
+*.bin
+*.so
+*.squashfs
+*.pyc
+__pycache__/
+.DS_Store
