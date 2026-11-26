@@ -6,11 +6,11 @@ Manage a **TP-Link TL-MR3020 v1** from **UniFi Network** with a small custom uco
 
 Tested on one physical MR3020 v1 with a Dream Router 7 running UniFi Network 11. Adoption, two 2.4 GHz WPA2 SSIDs, per-client VLAN assignment, Wi-Fi statistics, and LLDP upstream port discovery worked on hardware. Lock to AP enforcement passed in a VM connected to the same controller.
 
-![Physical MR3020 radio in the UniFi Radios view on channel 13 at 20 MHz](docs/screenshots/unifi-radio.png)
+![MR3020 in UniFi Radios, running on channel 13 at 20 MHz](docs/screenshots/unifi-mr3020-radio.jpg)
 
-![UniFi 2.4 GHz radio configuration for the MR3020 compatibility profile](docs/screenshots/unifi-radio-settings.png)
+![Live UniFi Air Stats from the MR3020](docs/screenshots/unifi-mr3020-air-stats.jpg)
 
-UniFi identifies the AP as an **AC Lite** for compatibility. Update this build over SSH with OpenWrt sysupgrade. Transmit power is reported from the driver. Set it in OpenWrt if you need to change it.
+The agent presents the AP to UniFi as an **AC Lite**, an older compatibility profile for basic AP management. It advertises the MR3020’s actual hardware capabilities: one 2.4 GHz Wi‑Fi 4 radio, 1×1, and one 100 Mbps Ethernet port. You can name the device **MR3020** in the console. Update this build over SSH with OpenWrt sysupgrade. Transmit power is reported from the driver and can be set in OpenWrt.
 
 ## OpenWrt base
 
